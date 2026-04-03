@@ -1,0 +1,2235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>High-Risk Monitoring Dashboard</title>
+  <style>
+    /* =========================================================
+       RESET & BASE
+    ========================================================= */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --bg-base: #0b0e14;
+      --bg-surface: #161b22;
+      --bg-hover: #1c2330;
+      --border: #2d333b;
+      --border-accent: #e3b341;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-muted: #4d5566;
+      --accent: #e3b341;
+      --accent-dim: rgba(227, 179, 65, 0.12);
+      --accent-glow: rgba(227, 179, 65, 0.25);
+      --red-hi: #f85149;
+      --red-dim: rgba(248, 81, 73, 0.12);
+      --green: #3fb950;
+      --blue: #58a6ff;
+      --purple: #bc8cff;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+        'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* =========================================================
+       LAYOUT SHELL
+    ========================================================= */
+    .shell {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* =========================================================
+       TOPBAR
+    ========================================================= */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(11, 14, 20, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+
+    .topbar-title {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--text-primary);
+    }
+
+    .topbar-title span {
+      color: var(--accent);
+    }
+
+    .topbar-badge {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid rgba(227, 179, 65, 0.3);
+      padding: 2px 8px;
+      border-radius: 20px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: pulse-green 2.5s infinite;
+    }
+
+    @keyframes pulse-green {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
+    }
+
+    .last-updated {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* =========================================================
+       STATS BAR
+    ========================================================= */
+    .stats-bar {
+      display: flex;
+      gap: 1px;
+      background: var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stat-cell {
+      flex: 1;
+      background: var(--bg-base);
+      padding: 16px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .stat-value {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .stat-value.accent {
+      color: var(--accent);
+    }
+
+    .stat-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* =========================================================
+       MAIN CONTENT
+    ========================================================= */
+    .main {
+      flex: 1;
+      padding: 28px 32px 48px;
+    }
+
+    /* =========================================================
+       ANALYTICS PANEL
+    ========================================================= */
+    .analytics-section {
+      margin-bottom: 28px;
+    }
+
+    .analytics-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 12px;
+    }
+
+    .analytics-title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .toggle-analytics-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background var(--transition), border-color var(--transition), color var(--transition);
+    }
+
+    .toggle-analytics-btn:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .toggle-analytics-btn svg {
+      transition: transform var(--transition);
+    }
+
+    .toggle-analytics-btn.collapsed svg {
+      transform: rotate(-90deg);
+    }
+
+    /* Chart grid */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      overflow: hidden;
+      transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.35s ease;
+      max-height: 2000px;
+      opacity: 1;
+    }
+
+    .charts-grid.hidden {
+      max-height: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Individual chart card */
+    .chart-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 260px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent) 0%, transparent 100%);
+      opacity: 0.5;
+    }
+
+    .chart-card.red-accent::before {
+      background: linear-gradient(90deg, var(--red-hi) 0%, transparent 100%);
+    }
+
+    .chart-card.blue-accent::before {
+      background: linear-gradient(90deg, var(--blue) 0%, transparent 100%);
+    }
+
+    .chart-card.purple-accent::before {
+      background: linear-gradient(90deg, var(--purple) 0%, transparent 100%);
+    }
+
+    /* Wide cards spanning 2 columns */
+    .chart-card.wide {
+      grid-column: span 2;
+    }
+
+    .chart-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .chart-subtitle {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: -8px;
+    }
+
+    .chart-canvas-wrap {
+      flex: 1;
+      position: relative;
+      min-height: 0;
+    }
+
+    .chart-canvas-wrap canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+
+    /* Chart legend */
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Tooltip */
+    .chart-tooltip {
+      position: fixed;
+      background: #1c2330;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 11px;
+      color: var(--text-primary);
+      pointer-events: none;
+      z-index: 200;
+      opacity: 0;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+      line-height: 1.6;
+    }
+
+    .chart-tooltip.visible {
+      opacity: 1;
+    }
+
+    /* =========================================================
+       CONTROLS ROW
+    ========================================================= */
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .controls-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .count-tag {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .controls-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Search */
+    .search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 10px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .search-input {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px 6px 32px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text-primary);
+      width: 220px;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+
+    .search-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .search-input:focus {
+      border-color: var(--accent);
+    }
+
+    /* Filter buttons */
+    .filter-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background var(--transition), border-color var(--transition), color var(--transition);
+    }
+
+    .filter-btn:hover {
+      background: var(--bg-hover);
+      border-color: var(--text-muted);
+    }
+
+    .filter-btn.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* =========================================================
+       TILE GRID
+    ========================================================= */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+
+    /* =========================================================
+       TILE
+    ========================================================= */
+    .tile {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      overflow: hidden;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      position: relative;
+    }
+
+    .tile:hover {
+      border-color: #3d4551;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .tile.high-risk {
+      border-left: 3px solid var(--accent);
+    }
+
+    .tile.critical-risk {
+      border-left: 3px solid var(--red-hi);
+    }
+
+    .tile:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* Tile header row */
+    .tile-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 18px 20px 14px;
+      gap: 12px;
+    }
+
+    .tile-identity {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .tile-rank {
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .tile-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tile-meta {
+      font-size: 12px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Flag badge */
+    .flag-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent-dim);
+      border: 1px solid rgba(227, 179, 65, 0.3);
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      min-width: 64px;
+      flex-shrink: 0;
+      text-align: center;
+    }
+
+    .flag-badge.critical {
+      background: var(--red-dim);
+      border-color: rgba(248, 81, 73, 0.35);
+    }
+
+    .flag-count {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .flag-badge.critical .flag-count {
+      color: var(--red-hi);
+    }
+
+    .flag-label {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    /* Quick stats row */
+    .tile-stats {
+      display: flex;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tile-stat {
+      flex: 1;
+      padding: 10px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .tile-stat+.tile-stat {
+      border-left: 1px solid var(--border);
+    }
+
+    .tile-stat-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .tile-stat-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Toggle row */
+    .tile-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+      transition: color var(--transition);
+    }
+
+    .tile:hover .tile-toggle {
+      color: var(--text-secondary);
+    }
+
+    .toggle-chevron {
+      display: flex;
+      align-items: center;
+      transition: transform var(--transition);
+    }
+
+    .tile.expanded .toggle-chevron {
+      transform: rotate(180deg);
+    }
+
+    /* Expand / collapse detail panel */
+    .tile-detail {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .tile.expanded .tile-detail {
+      max-height: 900px;
+    }
+
+    .detail-inner {
+      border-top: 1px solid var(--border);
+      padding: 18px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Detail sections */
+    .detail-section-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .detail-field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .field-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .field-value {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .field-value.mono {
+      font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 12px;
+    }
+
+    .field-value.accent-val {
+      color: var(--accent);
+    }
+
+    /* CC mask display */
+    .cc-mask {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.1em;
+    }
+
+    .cc-dots {
+      color: var(--text-muted);
+    }
+
+    /* Latest transaction block */
+    .tx-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      background: var(--bg-hover);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
+    .tx-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 12px;
+      gap: 12px;
+    }
+
+    .tx-row+.tx-row {
+      border-top: 1px solid var(--border);
+    }
+
+    .tx-key {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .tx-val {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      text-align: right;
+      word-break: break-word;
+    }
+
+    .tx-val.hi {
+      color: var(--red-hi);
+      font-weight: 600;
+    }
+
+    /* =========================================================
+       LOADING / EMPTY / ERROR STATES
+    ========================================================= */
+    .state-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 80px 24px;
+      text-align: center;
+    }
+
+    .state-icon {
+      width: 48px;
+      height: 48px;
+      color: var(--text-muted);
+    }
+
+    .state-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .state-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      max-width: 320px;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .source-banner {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(227, 179, 65, 0.08);
+      border: 1px solid rgba(227, 179, 65, 0.2);
+      border-radius: var(--radius-md);
+      padding: 10px 16px;
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+
+    .source-banner.visible {
+      display: flex;
+    }
+
+    /* =========================================================
+       FOOTER
+    ========================================================= */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .footer-left {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .footer-right {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    /* =========================================================
+       SCROLLBAR
+    ========================================================= */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-base);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3d4551;
+    }
+
+    /* =========================================================
+       RESPONSIVE
+    ========================================================= */
+    @media (max-width: 1200px) {
+      .charts-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .chart-card.wide {
+        grid-column: span 2;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .topbar {
+        padding: 0 16px;
+      }
+
+      .main {
+        padding: 20px 16px 40px;
+      }
+
+      .stats-bar {
+        flex-direction: column;
+        gap: 0;
+      }
+
+      .stat-cell {
+        border-right: none !important;
+        border-bottom: 1px solid var(--border);
+        padding: 12px 16px;
+      }
+
+      .footer {
+        padding: 12px 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+
+      .topbar-right {
+        gap: 12px;
+      }
+
+      .last-updated {
+        display: none;
+      }
+
+      .controls {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .controls-right {
+        width: 100%;
+      }
+
+      .search-wrap {
+        flex: 1;
+      }
+
+      .search-input {
+        width: 100%;
+      }
+
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-card.wide {
+        grid-column: span 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="shell">
+
+    <!-- ======================================================
+       TOPBAR
+  ====================================================== -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <svg class="logo-icon" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2L4 6.5V13.5C4 19.25 8.4 24.62 14 26C19.6 24.62 24 19.25 24 13.5V6.5L14 2Z"
+            fill="rgba(227,179,65,0.15)" stroke="#e3b341" stroke-width="1.5" stroke-linejoin="round" />
+          <path d="M10 13.5L12.8 16.5L18 11" stroke="#e3b341" stroke-width="1.5" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+        <span class="topbar-title">High<span>-</span>Risk <span>Monitor</span></span>
+        <span class="topbar-badge">Live</span>
+      </div>
+      <div class="topbar-right">
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          <span>System Active</span>
+        </div>
+        <span class="last-updated" id="lastUpdated">Fetching data...</span>
+      </div>
+    </header>
+
+    <!-- ======================================================
+       STATS BAR
+  ====================================================== -->
+    <div class="stats-bar">
+      <div class="stat-cell">
+        <span class="stat-label">Flagged Subjects</span>
+        <span class="stat-value accent" id="statSubjects">—</span>
+        <span class="stat-sub">Sorted by risk level</span>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-label">Total Flags Issued</span>
+        <span class="stat-value accent" id="statFlags">—</span>
+        <span class="stat-sub">Cumulative flag count</span>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-label">Total Exposure</span>
+        <span class="stat-value" id="statExposure">—</span>
+        <span class="stat-sub">Aggregate transaction amount</span>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-label">Highest Risk Score</span>
+        <span class="stat-value accent" id="statMax">—</span>
+        <span class="stat-sub">Max flags on single subject</span>
+      </div>
+    </div>
+
+    <!-- ======================================================
+       MAIN
+  ====================================================== -->
+    <main class="main">
+
+      <!-- Fallback banner -->
+      <div class="source-banner" id="fallbackBanner">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+          <path
+            d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 3a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2z" />
+        </svg>
+        Live data source unavailable — displaying fallback demo data
+      </div>
+
+      <!-- ============================================
+         ANALYTICS SECTION
+    ============================================ -->
+      <section class="analytics-section" id="analyticsSection">
+        <div class="analytics-header">
+          <div class="analytics-title-row">
+            <span class="section-label">Data Visualisation</span>
+          </div>
+          <button class="toggle-analytics-btn" id="toggleAnalyticsBtn" title="Toggle charts">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round">
+              <path d="M2 4l4 4 4-4" />
+            </svg>
+            Hide Charts
+          </button>
+        </div>
+
+        <div class="charts-grid" id="chartsGrid">
+
+          <!-- Chart 1: Flag Distribution Bar Chart (wide) -->
+          <div class="chart-card wide" id="cardBarChart">
+            <div>
+              <div class="chart-title">Flag Distribution — Top Subjects</div>
+              <div class="chart-subtitle">Sorted descending by total flag count</div>
+            </div>
+            <div class="chart-canvas-wrap" style="height:200px;">
+              <canvas id="barChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 2: Risk Breakdown Donut -->
+          <div class="chart-card red-accent" id="cardDonut">
+            <div>
+              <div class="chart-title">Risk Tier Breakdown</div>
+              <div class="chart-subtitle">Distribution by severity level</div>
+            </div>
+            <div class="chart-canvas-wrap" style="height:160px;">
+              <canvas id="donutChart"></canvas>
+            </div>
+            <div class="chart-legend" id="donutLegend"></div>
+          </div>
+
+          <!-- Chart 3: Exposure Treemap -->
+          <div class="chart-card blue-accent" id="cardTreemap">
+            <div>
+              <div class="chart-title">Exposure Treemap</div>
+              <div class="chart-subtitle">Total amount per subject (area = exposure)</div>
+            </div>
+            <div class="chart-canvas-wrap" style="height:160px;">
+              <canvas id="treemapChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 4: Scatter — Avg vs Total Amt (wide) -->
+          <div class="chart-card purple-accent wide" id="cardScatter">
+            <div>
+              <div class="chart-title">Avg Transaction vs Total Exposure</div>
+              <div class="chart-subtitle">Bubble size = flag count. Hover for details.</div>
+            </div>
+            <div class="chart-canvas-wrap" style="height:220px;">
+              <canvas id="scatterChart"></canvas>
+            </div>
+            <div class="chart-legend">
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#f85149;"></span> Critical
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#e3b341;"></span> High Risk
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#58a6ff;"></span> Standard
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart 5: Horizontal Avg Amt Rank -->
+          <div class="chart-card wide" id="cardHBar">
+            <div>
+              <div class="chart-title">Average Transaction Amount — Top Subjects</div>
+              <div class="chart-subtitle">Ranked by average spend per transaction</div>
+            </div>
+            <div class="chart-canvas-wrap" style="height:200px;">
+              <canvas id="hbarChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 6: Fraud Flag Ratio Gauge -->
+          <div class="chart-card" id="cardGauge">
+            <div>
+              <div class="chart-title">Critical Rate</div>
+              <div class="chart-subtitle">% of subjects at critical tier</div>
+            </div>
+            <div class="chart-canvas-wrap" style="height:160px;">
+              <canvas id="gaugeChart"></canvas>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ============================================
+         RISK PROFILES GRID
+    ============================================ -->
+      <div class="controls">
+        <div class="controls-left">
+          <span class="section-title">Risk Profiles</span>
+          <span class="count-tag" id="countTag">0 records</span>
+        </div>
+        <div class="controls-right">
+          <div class="search-wrap">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="6.5" cy="6.5" r="5" />
+              <path d="M10.5 10.5L14 14" stroke-linecap="round" />
+            </svg>
+            <input class="search-input" id="searchInput" type="text" placeholder="Search by name, city, job..."
+              autocomplete="off" />
+          </div>
+          <button class="filter-btn active" id="btnAll">All</button>
+          <button class="filter-btn" id="btnHigh">High Risk</button>
+          <button class="filter-btn" id="btnCritical">Critical</button>
+        </div>
+      </div>
+
+      <div class="grid" id="grid">
+        <div style="grid-column:1/-1;">
+          <div class="state-container">
+            <div class="spinner"></div>
+            <span class="state-title">Loading Risk Data</span>
+            <span class="state-sub">Fetching and parsing NDJSON records...</span>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ======================================================
+       FOOTER
+  ====================================================== -->
+    <footer class="footer">
+      <span class="footer-left">High-Risk Monitoring Dashboard &mdash; Confidential &amp; Internal Use Only</span>
+      <span class="footer-right" id="footerInfo">Records loaded: —</span>
+    </footer>
+
+  </div>
+
+  <!-- Shared tooltip -->
+  <div class="chart-tooltip" id="chartTooltip"></div>
+
+  <script>
+    /* =============================================================
+       FALLBACK DATA
+    ============================================================= */
+    const FALLBACK_DATA = [
+      {
+        first: "Mark", last: "Wood",
+        cc_num: "2720433095629877",
+        job: "Engineer, electronics", city: "Bowdoin", state: "ME",
+        total_flags_count: 52, total_amt: 36377.10, avg_amt: 699.56,
+        max_amt: 3136.33, min_amt: 1.44,
+        latest_transaction: "2020-06-08T20:04:55.000Z",
+        earliest_transaction: "2019-01-18T18:30:01.000Z"
+      },
+      {
+        first: "Gary", last: "Martinez",
+        cc_num: "4364010865167176",
+        job: "Immunologist", city: "Reno", state: "NV",
+        total_flags_count: 45, total_amt: 20700.10, avg_amt: 460.00,
+        max_amt: 3069.89, min_amt: 1.03,
+        latest_transaction: "2020-05-19T14:44:09.000Z",
+        earliest_transaction: "2019-02-03T18:42:39.000Z"
+      },
+      {
+        first: "Victoria", last: "Fleming",
+        cc_num: "6011693194885790",
+        job: "Lecturer, further education", city: "Stanchfield", state: "MN",
+        total_flags_count: 42, total_amt: 35712.50, avg_amt: 850.30,
+        max_amt: 5735.43, min_amt: 1.23,
+        latest_transaction: "2020-06-07T23:30:51.000Z",
+        earliest_transaction: "2019-01-28T22:18:36.000Z"
+      },
+      {
+        first: "Carol", last: "Dillon",
+        cc_num: "345933964507467",
+        job: "Regulatory affairs officer", city: "Whaleyville", state: "MD",
+        total_flags_count: 41, total_amt: 26929.96, avg_amt: 656.83,
+        max_amt: 4246.28, min_amt: 1.22,
+        latest_transaction: "2020-06-16T17:57:00.000Z",
+        earliest_transaction: "2019-01-07T13:31:36.000Z"
+      },
+      {
+        first: "Keith", last: "Sanders",
+        cc_num: "3545109339866548",
+        job: "Chartered public finance accountant", city: "Moorhead", state: "MS",
+        total_flags_count: 40, total_amt: 22371.58, avg_amt: 559.29,
+        max_amt: 4185.61, min_amt: 1.45,
+        latest_transaction: "2020-06-08T14:40:52.000Z",
+        earliest_transaction: "2019-01-08T17:55:15.000Z"
+      }
+    ];
+
+    /* =============================================================
+       CONSTANTS
+    ============================================================= */
+    const DATA_URL = "https://raw.githubusercontent.com/chaitanya1110-creates/fraud_analysis_project/main/data/flagged_personnel.json";
+    const CRITICAL_THRESHOLD = 30;
+    const HIGH_THRESHOLD = 10;
+    const MAX_BAR_ITEMS = 15; // max subjects shown in bar charts
+
+    /* =============================================================
+       STATE
+    ============================================================= */
+    let allRecords = [];
+    let filtered = [];
+    let activeFilter = "all";
+    let searchQuery = "";
+
+    /* =============================================================
+       UTILITY HELPERS
+    ============================================================= */
+    function formatCurrency(val) {
+      if (val == null || isNaN(val)) return "N/A";
+      return new Intl.NumberFormat("en-US", {
+        style: "currency", currency: "USD",
+        minimumFractionDigits: 2, maximumFractionDigits: 2
+      }).format(val);
+    }
+
+    function formatCurrencyShort(val) {
+      if (val == null || isNaN(val)) return "N/A";
+      if (Math.abs(val) >= 1e6) return "$" + (val / 1e6).toFixed(1) + "M";
+      if (Math.abs(val) >= 1e3) return "$" + (val / 1e3).toFixed(1) + "K";
+      return "$" + val.toFixed(0);
+    }
+
+    function maskCC(cc) {
+      const s = String(cc).replace(/\D/g, "");
+      if (s.length < 4) return s;
+      return s.slice(-4);
+    }
+
+    function riskClass(count) {
+      if (count >= CRITICAL_THRESHOLD) return "critical-risk";
+      if (count >= HIGH_THRESHOLD) return "high-risk";
+      return "";
+    }
+
+    function isCritical(count) { return count >= CRITICAL_THRESHOLD; }
+
+    function formatDate(ts) {
+      if (!ts) return "N/A";
+      try {
+        const d = new Date(ts.replace(" ", "T"));
+        if (isNaN(d.getTime())) return ts;
+        return d.toLocaleString("en-US", {
+          month: "short", day: "numeric", year: "numeric",
+          hour: "2-digit", minute: "2-digit"
+        });
+      } catch { return ts; }
+    }
+
+    function stampTime() {
+      const el = document.getElementById("lastUpdated");
+      if (el) el.textContent = "Updated " + new Date().toLocaleTimeString("en-US", {
+        hour: "2-digit", minute: "2-digit", second: "2-digit"
+      });
+    }
+
+    function escHtml(str) {
+      if (str == null) return "";
+      return String(str)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    /* =============================================================
+       DATA FETCHING
+    ============================================================= */
+    async function fetchNDJSON(url) {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const text = await response.text();
+      return text.split(/\r?\n/).filter(l => l.trim().length > 0).map((line, i) => {
+        try { return JSON.parse(line); }
+        catch (e) { console.warn(`[NDJSON] Skip line ${i + 1}:`, e.message); return null; }
+      }).filter(Boolean);
+    }
+
+    async function loadData() {
+      let records;
+      let usedFallback = false;
+      try {
+        records = await fetchNDJSON(DATA_URL);
+        if (!records || records.length === 0) throw new Error("Empty dataset");
+        console.info(`[Dashboard] Loaded ${records.length} records.`);
+      } catch (err) {
+        console.warn("[Dashboard] Using fallback data.", err.message);
+        records = FALLBACK_DATA;
+        usedFallback = true;
+      }
+      if (usedFallback) document.getElementById("fallbackBanner").classList.add("visible");
+      records.sort((a, b) => (b.total_flags_count || 0) - (a.total_flags_count || 0));
+      allRecords = records;
+      stampTime();
+      updateStats(records);
+      drawAllCharts(records);
+      applyFilters();
+    }
+
+    /* =============================================================
+       STATISTICS BAR
+    ============================================================= */
+    function updateStats(records) {
+      const total = records.length;
+      const totalFlags = records.reduce((s, r) => s + (r.total_flags_count || 0), 0);
+      const totalAmt = records.reduce((s, r) => s + (r.total_amt || 0), 0);
+      const maxFlags = records.length > 0 ? records[0].total_flags_count || 0 : 0;
+      document.getElementById("statSubjects").textContent = total.toLocaleString();
+      document.getElementById("statFlags").textContent = totalFlags.toLocaleString();
+      document.getElementById("statExposure").textContent = formatCurrency(totalAmt);
+      document.getElementById("statMax").textContent = maxFlags.toLocaleString();
+      document.getElementById("footerInfo").textContent = `Records loaded: ${total.toLocaleString()}`;
+    }
+
+    /* =============================================================
+       FILTER & SEARCH
+    ============================================================= */
+    function applyFilters() {
+      const q = searchQuery.toLowerCase().trim();
+      filtered = allRecords.filter(r => {
+        const haystack = [r.first, r.last, r.job, r.city, r.state].join(" ").toLowerCase();
+        const matchSearch = !q || haystack.includes(q);
+        let matchFilter = true;
+        if (activeFilter === "high")
+          matchFilter = (r.total_flags_count >= HIGH_THRESHOLD) && (r.total_flags_count < CRITICAL_THRESHOLD);
+        else if (activeFilter === "critical")
+          matchFilter = r.total_flags_count >= CRITICAL_THRESHOLD;
+        return matchSearch && matchFilter;
+      });
+      document.getElementById("countTag").textContent =
+        `${filtered.length} record${filtered.length !== 1 ? "s" : ""}`;
+      renderGrid();
+    }
+
+    /* =============================================================
+       RENDER GRID
+    ============================================================= */
+    function renderGrid() {
+      const grid = document.getElementById("grid");
+      grid.innerHTML = "";
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div style="grid-column:1/-1;">
+      <div class="state-container">
+        <svg class="state-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="24" cy="24" r="20"/>
+          <path d="M24 16v8M24 32h.01" stroke-linecap="round"/>
+        </svg>
+        <span class="state-title">No Records Found</span>
+        <span class="state-sub">Try adjusting search or filter criteria.</span>
+      </div></div>`;
+        return;
+      }
+      const frag = document.createDocumentFragment();
+      filtered.forEach((record, index) => frag.appendChild(buildTile(record, index)));
+      grid.appendChild(frag);
+    }
+
+    function buildTile(r, index) {
+      const flags = r.total_flags_count || 0;
+      const critical = isCritical(flags);
+      const rc = riskClass(flags);
+      const rankLabel = index === 0 ? "Highest Risk" : index === 1 ? "2nd Highest" :
+        index === 2 ? "3rd Highest" : `#${index + 1}`;
+      const lt = r.latest_transaction || {};
+
+      const tile = document.createElement("div");
+      tile.className = `tile ${rc}`.trim();
+      tile.setAttribute("role", "button");
+      tile.setAttribute("tabindex", "0");
+      tile.setAttribute("aria-expanded", "false");
+      tile.setAttribute("aria-label", `${r.first} ${r.last} — ${flags} flags`);
+
+      tile.innerHTML = `
+    <div class="tile-header">
+      <div class="tile-identity">
+        <span class="tile-rank">${rankLabel}</span>
+        <span class="tile-name">${escHtml(r.first)} ${escHtml(r.last)}</span>
+        <span class="tile-meta">${escHtml(r.job || "Unknown")} &bull; ${escHtml(r.city || "—")}, ${escHtml(r.state || "—")}</span>
+      </div>
+      <div class="flag-badge ${critical ? "critical" : ""}">
+        <span class="flag-count">${flags}</span>
+        <span class="flag-label">Flags</span>
+      </div>
+    </div>
+    <div class="tile-stats">
+      <div class="tile-stat">
+        <span class="tile-stat-label">Total Amt</span>
+        <span class="tile-stat-value">${formatCurrency(r.total_amt)}</span>
+      </div>
+      <div class="tile-stat">
+        <span class="tile-stat-label">Avg Amt</span>
+        <span class="tile-stat-value">${formatCurrency(r.avg_amt)}</span>
+      </div>
+    </div>
+    <div class="tile-toggle">
+      <span>View Details</span>
+      <span class="toggle-chevron">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
+             stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <path d="M2 4l4 4 4-4"/>
+        </svg>
+      </span>
+    </div>
+    <div class="tile-detail">
+      <div class="detail-inner">
+        <div>
+          <div class="detail-section-title">Account Details</div>
+          <div class="detail-grid">
+            <div class="detail-field">
+              <span class="field-label">Full Name</span>
+              <span class="field-value">${escHtml(r.first)} ${escHtml(r.last)}</span>
+            </div>
+            <div class="detail-field">
+              <span class="field-label">Occupation</span>
+              <span class="field-value">${escHtml(r.job || "N/A")}</span>
+            </div>
+            <div class="detail-field">
+              <span class="field-label">Location</span>
+              <span class="field-value">${escHtml(r.city || "—")}, ${escHtml(r.state || "—")}</span>
+            </div>
+            <div class="detail-field">
+              <span class="field-label">Card Number</span>
+              <span class="field-value mono">
+                <span class="cc-mask">
+                  <span class="cc-dots">&bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull;</span>
+                  <span>${maskCC(r.cc_num || "")}</span>
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="detail-section-title">Financial Summary</div>
+          <div class="detail-grid">
+            <div class="detail-field">
+              <span class="field-label">Total Transaction Amount</span>
+              <span class="field-value accent-val">${formatCurrency(r.total_amt)}</span>
+            </div>
+            <div class="detail-field">
+              <span class="field-label">Average Transaction</span>
+              <span class="field-value">${formatCurrency(r.avg_amt)}</span>
+            </div>
+            <div class="detail-field">
+              <span class="field-label">Total Flags</span>
+              <span class="field-value ${critical ? "" : "accent-val"}"
+                    style="${critical ? "color:var(--red-hi)" : ""}">${flags}</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+
+      function toggleExpand(e) {
+        if (e && e.type === "keydown" && e.key !== "Enter" && e.key !== " ") return;
+        const expanded = tile.classList.toggle("expanded");
+        tile.setAttribute("aria-expanded", String(expanded));
+      }
+      tile.addEventListener("click", toggleExpand);
+      tile.addEventListener("keydown", toggleExpand);
+      return tile;
+    }
+
+    /* =============================================================
+       CHART ENGINE
+       Pure Canvas — no external libraries
+    ============================================================= */
+
+    const tooltip = document.getElementById("chartTooltip");
+
+    function showTooltip(html, x, y) {
+      tooltip.innerHTML = html;
+      tooltip.classList.add("visible");
+      // Keep inside viewport
+      const tw = tooltip.offsetWidth || 160;
+      const th = tooltip.offsetHeight || 60;
+      let tx = x + 14;
+      let ty = y - th / 2;
+      if (tx + tw > window.innerWidth - 12) tx = x - tw - 14;
+      if (ty < 8) ty = 8;
+      tooltip.style.left = tx + "px";
+      tooltip.style.top = ty + "px";
+    }
+
+    function hideTooltip() {
+      tooltip.classList.remove("visible");
+    }
+
+    /* Helper: get CSS var resolved value */
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    /* Resize canvas to its display size with devicePixelRatio */
+    function sizeCanvas(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+      return { ctx, w: rect.width, h: rect.height };
+    }
+
+    /* ---- CHART 1: Vertical Bar Chart ---- */
+    function drawBarChart(records) {
+      const canvas = document.getElementById("barChart");
+      if (!canvas) return;
+      const data = records.slice(0, MAX_BAR_ITEMS);
+      const { ctx, w, h } = sizeCanvas(canvas);
+
+      const PAD_L = 12, PAD_R = 12, PAD_T = 16, PAD_B = 52;
+      const chartW = w - PAD_L - PAD_R;
+      const chartH = h - PAD_T - PAD_B;
+
+      const maxVal = Math.max(...data.map(r => r.total_flags_count || 0), 1);
+      const barW = chartW / data.length;
+      const gap = barW * 0.25;
+
+      // Grid lines
+      const gridLines = 4;
+      ctx.strokeStyle = "#2d333b";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= gridLines; i++) {
+        const y = PAD_T + chartH - (chartH * i / gridLines);
+        ctx.beginPath();
+        ctx.moveTo(PAD_L, y);
+        ctx.lineTo(PAD_L + chartW, y);
+        ctx.stroke();
+        // Label
+        ctx.fillStyle = "#4d5566";
+        ctx.font = "10px Inter, system-ui, sans-serif";
+        ctx.textAlign = "right";
+        ctx.fillText(Math.round(maxVal * i / gridLines), PAD_L - 2, y + 3);
+      }
+
+      // Bars
+      const hitBoxes = [];
+      data.forEach((r, i) => {
+        const flags = r.total_flags_count || 0;
+        const bh = (flags / maxVal) * chartH;
+        const x = PAD_L + i * barW + gap / 2;
+        const y = PAD_T + chartH - bh;
+        const bw = barW - gap;
+
+        // Color by risk
+        let color;
+        if (flags >= CRITICAL_THRESHOLD) color = "#f85149";
+        else if (flags >= HIGH_THRESHOLD) color = "#e3b341";
+        else color = "#58a6ff";
+
+        // Bar gradient
+        const grad = ctx.createLinearGradient(0, y, 0, y + bh);
+        grad.addColorStop(0, color);
+        grad.addColorStop(1, color + "44");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.roundRect
+          ? ctx.roundRect(x, y, bw, bh, [3, 3, 0, 0])
+          : ctx.rect(x, y, bw, bh);
+        ctx.fill();
+
+        // Value label on bar top
+        if (bh > 18) {
+          ctx.fillStyle = color;
+          ctx.font = "bold 10px Inter, system-ui, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(flags, x + bw / 2, y - 4);
+        }
+
+        // X-axis name label (rotated)
+        const label = (r.last || r.last_name || "?").slice(0, 8);
+        ctx.save();
+        ctx.translate(x + bw / 2, PAD_T + chartH + 8);
+        ctx.rotate(-Math.PI / 4);
+        ctx.fillStyle = "#8b949e";
+        ctx.font = "10px Inter, system-ui, sans-serif";
+        ctx.textAlign = "right";
+        ctx.fillText(label, 0, 0);
+        ctx.restore();
+
+        hitBoxes.push({ x, y: PAD_T, w: bw, h: chartH, r });
+      });
+
+      // Mouse interaction
+      canvas._hitBoxes = hitBoxes;
+      canvas._barPadT = PAD_T;
+      canvas._barChartH = chartH;
+    }
+
+    /* ---- CHART 2: Donut Chart ---- */
+    function drawDonutChart(records) {
+      const canvas = document.getElementById("donutChart");
+      if (!canvas) return;
+      const { ctx, w, h } = sizeCanvas(canvas);
+
+      const critical = records.filter(r => r.total_flags_count >= CRITICAL_THRESHOLD).length;
+      const high = records.filter(r => r.total_flags_count >= HIGH_THRESHOLD && r.total_flags_count < CRITICAL_THRESHOLD).length;
+      const normal = records.length - critical - high;
+      const total = records.length || 1;
+
+      const segments = [
+        { label: "Critical", value: critical, color: "#f85149" },
+        { label: "High Risk", value: high, color: "#e3b341" },
+        { label: "Standard", value: normal, color: "#58a6ff" }
+      ];
+
+      const cx = w / 2;
+      const cy = h / 2;
+      const outerR = Math.min(cx, cy) - 8;
+      const innerR = outerR * 0.58;
+
+      let startAngle = -Math.PI / 2;
+      const hitArcs = [];
+
+      segments.forEach(seg => {
+        const slice = (seg.value / total) * 2 * Math.PI;
+        const endAngle = startAngle + slice;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, outerR, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = seg.color;
+        ctx.fill();
+
+        // Inner "hole" (donut)
+        ctx.beginPath();
+        ctx.arc(cx, cy, innerR, 0, 2 * Math.PI);
+        ctx.fillStyle = "#161b22";
+        ctx.fill();
+
+        hitArcs.push({ startAngle, endAngle, seg });
+        startAngle = endAngle;
+      });
+
+      // Center text
+      ctx.fillStyle = "#e6edf3";
+      ctx.font = "bold 18px Inter, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(total, cx, cy - 6);
+      ctx.fillStyle = "#4d5566";
+      ctx.font = "10px Inter, system-ui, sans-serif";
+      ctx.fillText("subjects", cx, cy + 10);
+
+      // Legend
+      const legendEl = document.getElementById("donutLegend");
+      if (legendEl) {
+        legendEl.innerHTML = segments.map(s =>
+          `<div class="legend-item">
+        <span class="legend-dot" style="background:${s.color};"></span>
+        ${s.label}: <strong style="color:#e6edf3;margin-left:2px;">${s.value}</strong>
+      </div>`
+        ).join("");
+      }
+
+      canvas._donutHitArcs = hitArcs;
+      canvas._donutCX = cx;
+      canvas._donutCY = cy;
+      canvas._donutR = outerR;
+      canvas._donutIR = innerR;
+    }
+
+    /* ---- CHART 3: Treemap ---- */
+    function drawTreemap(records) {
+      const canvas = document.getElementById("treemapChart");
+      if (!canvas) return;
+      const { ctx, w, h } = sizeCanvas(canvas);
+
+      const data = records
+        .filter(r => (r.total_amt || 0) > 0)
+        .slice(0, 20)
+        .map(r => ({
+          name: `${r.first || r.first_name || ""} ${r.last || r.last_name || ""}`.trim(),
+          value: r.total_amt || 0,
+          flags: r.total_flags_count || 0
+        }));
+
+      if (data.length === 0) return;
+
+      // Simple squarified-like layout (slice-and-dice)
+      const total = data.reduce((s, d) => s + d.value, 0);
+      data.sort((a, b) => b.value - a.value);
+
+      const PAD = 1;
+      const rects = sliceDice(data, 0, 0, w, h);
+
+      const hitRects = [];
+      rects.forEach((rect, i) => {
+        const d = data[i];
+        if (!d) return;
+
+        let color;
+        if (d.flags >= CRITICAL_THRESHOLD) color = "#f85149";
+        else if (d.flags >= HIGH_THRESHOLD) color = "#e3b341";
+        else color = "#58a6ff";
+
+        ctx.fillStyle = color + "22";
+        ctx.strokeStyle = color + "66";
+        ctx.lineWidth = 1;
+        ctx.fillRect(rect.x + PAD, rect.y + PAD, rect.w - PAD * 2, rect.h - PAD * 2);
+        ctx.strokeRect(rect.x + PAD, rect.y + PAD, rect.w - PAD * 2, rect.h - PAD * 2);
+
+        if (rect.w > 40 && rect.h > 24) {
+          ctx.fillStyle = color;
+          ctx.font = `bold ${Math.min(11, rect.h / 3)}px Inter, system-ui, sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          const label = d.name.length > 10 ? d.name.split(" ")[1] || d.name.slice(0, 8) : d.name;
+          ctx.fillText(label, rect.x + rect.w / 2, rect.y + rect.h / 2 - 4);
+          if (rect.h > 36) {
+            ctx.fillStyle = "#8b949e";
+            ctx.font = `${Math.min(9, rect.h / 4)}px Inter, system-ui, sans-serif`;
+            ctx.fillText(formatCurrencyShort(d.value), rect.x + rect.w / 2, rect.y + rect.h / 2 + 9);
+          }
+        }
+
+        hitRects.push({ x: rect.x, y: rect.y, w: rect.w, h: rect.h, d });
+      });
+
+      canvas._treemapHits = hitRects;
+    }
+
+    /* Slice-and-dice algorithm for treemap */
+    function sliceDice(items, x, y, w, h, depth = 0) {
+      if (items.length === 0) return [];
+      if (items.length === 1) return [{ x, y, w, h }];
+      const total = items.reduce((s, d) => s + d.value, 0);
+      const rects = [];
+      let offset = depth % 2 === 0 ? x : y;
+      const size = depth % 2 === 0 ? w : h;
+      const cross = depth % 2 === 0 ? h : w;
+      items.forEach((item, i) => {
+        const share = (item.value / total) * size;
+        if (depth % 2 === 0)
+          rects.push({ x: offset, y, w: share, h: cross });
+        else
+          rects.push({ x, y: offset, w: cross, h: share });
+        offset += share;
+      });
+      return rects;
+    }
+
+    /* ---- CHART 4: Scatter / Bubble Chart ---- */
+    function drawScatterChart(records) {
+      const canvas = document.getElementById("scatterChart");
+      if (!canvas) return;
+      const { ctx, w, h } = sizeCanvas(canvas);
+
+      const PAD_L = 52, PAD_R = 20, PAD_T = 16, PAD_B = 36;
+      const chartW = w - PAD_L - PAD_R;
+      const chartH = h - PAD_T - PAD_B;
+
+      const data = records.filter(r => r.avg_amt > 0 && r.total_amt > 0);
+      if (data.length === 0) return;
+
+      const maxX = Math.max(...data.map(r => r.avg_amt));
+      const maxY = Math.max(...data.map(r => r.total_amt));
+      const maxF = Math.max(...data.map(r => r.total_flags_count || 1));
+
+      // Grid lines
+      const gLines = 4;
+      ctx.strokeStyle = "#2d333b";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= gLines; i++) {
+        // Horizontal
+        const y = PAD_T + chartH - (chartH * i / gLines);
+        ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(PAD_L + chartW, y); ctx.stroke();
+        ctx.fillStyle = "#4d5566";
+        ctx.font = "9px Inter, system-ui, sans-serif";
+        ctx.textAlign = "right";
+        ctx.fillText(formatCurrencyShort(maxY * i / gLines), PAD_L - 4, y + 3);
+        // Vertical
+        const x = PAD_L + (chartW * i / gLines);
+        ctx.beginPath(); ctx.moveTo(x, PAD_T); ctx.lineTo(x, PAD_T + chartH); ctx.stroke();
+        ctx.fillStyle = "#4d5566";
+        ctx.textAlign = "center";
+        ctx.fillText(formatCurrencyShort(maxX * i / gLines), x, PAD_T + chartH + 14);
+      }
+
+      // Axis labels
+      ctx.fillStyle = "#4d5566";
+      ctx.font = "10px Inter, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Avg Transaction →", PAD_L + chartW / 2, h - 4);
+      ctx.save();
+      ctx.translate(12, PAD_T + chartH / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText("Total Exposure →", 0, 0);
+      ctx.restore();
+
+      // Bubbles
+      const hitBubbles = [];
+      data.forEach(r => {
+        const px = PAD_L + (r.avg_amt / maxX) * chartW;
+        const py = PAD_T + chartH - (r.total_amt / maxY) * chartH;
+        const rad = 4 + ((r.total_flags_count || 1) / maxF) * 14;
+
+        let color;
+        if (r.total_flags_count >= CRITICAL_THRESHOLD) color = "#f85149";
+        else if (r.total_flags_count >= HIGH_THRESHOLD) color = "#e3b341";
+        else color = "#58a6ff";
+
+        ctx.beginPath();
+        ctx.arc(px, py, rad, 0, 2 * Math.PI);
+        ctx.fillStyle = color + "33";
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        hitBubbles.push({ px, py, rad, r });
+      });
+
+      canvas._scatterHits = hitBubbles;
+    }
+
+    /* ---- CHART 5: Horizontal Bar (Avg Amt) ---- */
+    function drawHBarChart(records) {
+      const canvas = document.getElementById("hbarChart");
+      if (!canvas) return;
+      const data = records.slice(0, MAX_BAR_ITEMS);
+      const { ctx, w, h } = sizeCanvas(canvas);
+
+      const PAD_L = 110, PAD_R = 50, PAD_T = 8, PAD_B = 8;
+      const chartW = w - PAD_L - PAD_R;
+      const chartH = h - PAD_T - PAD_B;
+      const barH = chartH / data.length;
+      const gap = barH * 0.25;
+      const maxVal = Math.max(...data.map(r => r.avg_amt || 0), 1);
+
+      // Vertical guide lines
+      const vLines = 4;
+      ctx.strokeStyle = "#2d333b";
+      ctx.lineWidth = 1;
+      for (let i = 1; i <= vLines; i++) {
+        const x = PAD_L + (chartW * i / vLines);
+        ctx.beginPath(); ctx.moveTo(x, PAD_T); ctx.lineTo(x, PAD_T + chartH); ctx.stroke();
+        ctx.fillStyle = "#4d5566";
+        ctx.font = "9px Inter, system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(formatCurrencyShort(maxVal * i / vLines), x, PAD_T + chartH + 12);
+      }
+
+      data.forEach((r, i) => {
+        const avg = r.avg_amt || 0;
+        const bw = (avg / maxVal) * chartW;
+        const y = PAD_T + i * barH + gap / 2;
+        const bh = barH - gap;
+        const label = `${(r.first || r.first_name || "").charAt(0)}. ${r.last || r.last_name || "?"}`.slice(0, 14);
+
+        let color;
+        if (r.total_flags_count >= CRITICAL_THRESHOLD) color = "#f85149";
+        else if (r.total_flags_count >= HIGH_THRESHOLD) color = "#e3b341";
+        else color = "#58a6ff";
+
+        // Bar
+        const grad = ctx.createLinearGradient(PAD_L, 0, PAD_L + bw, 0);
+        grad.addColorStop(0, color);
+        grad.addColorStop(1, color + "44");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.roundRect
+          ? ctx.roundRect(PAD_L, y, bw, bh, [0, 3, 3, 0])
+          : ctx.rect(PAD_L, y, bw, bh);
+        ctx.fill();
+
+        // Name label
+        ctx.fillStyle = "#8b949e";
+        ctx.font = "10px Inter, system-ui, sans-serif";
+        ctx.textAlign = "right";
+        ctx.fillText(label, PAD_L - 6, y + bh / 2 + 3);
+
+        // Value label
+        ctx.fillStyle = color;
+        ctx.font = "bold 10px Inter, system-ui, sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(formatCurrencyShort(avg), PAD_L + bw + 5, y + bh / 2 + 3);
+      });
+    }
+
+    /* ---- CHART 6: Semicircle Gauge ---- */
+    function drawGaugeChart(records) {
+      const canvas = document.getElementById("gaugeChart");
+      if (!canvas) return;
+      const { ctx, w, h } = sizeCanvas(canvas);
+
+      const criticalCount = records.filter(r => r.total_flags_count >= CRITICAL_THRESHOLD).length;
+      const ratio = records.length > 0 ? criticalCount / records.length : 0;
+
+      const cx = w / 2;
+      const cy = h * 0.78;
+      const R = Math.min(cx, cy) - 12;
+      const startAngle = Math.PI;
+      const endAngle = 2 * Math.PI;
+
+      // Background arc
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, startAngle, endAngle);
+      ctx.strokeStyle = "#2d333b";
+      ctx.lineWidth = 14;
+      ctx.lineCap = "round";
+      ctx.stroke();
+
+      // Colored fill arc
+      const fillEnd = startAngle + ratio * Math.PI;
+      const arcColor = ratio > 0.5 ? "#f85149" : ratio > 0.25 ? "#e3b341" : "#3fb950";
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, startAngle, fillEnd);
+      ctx.strokeStyle = arcColor;
+      ctx.lineWidth = 14;
+      ctx.lineCap = "round";
+      ctx.stroke();
+
+      // Needle
+      const needleAngle = startAngle + ratio * Math.PI;
+      const needleLen = R - 10;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(
+        cx + needleLen * Math.cos(needleAngle),
+        cy + needleLen * Math.sin(needleAngle)
+      );
+      ctx.strokeStyle = "#e6edf3";
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.stroke();
+
+      // Center dot
+      ctx.beginPath();
+      ctx.arc(cx, cy, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = "#e6edf3";
+      ctx.fill();
+
+      // Percentage text
+      ctx.fillStyle = arcColor;
+      ctx.font = "bold 22px Inter, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`${(ratio * 100).toFixed(0)}%`, cx, cy - R * 0.4);
+
+      // Label
+      ctx.fillStyle = "#4d5566";
+      ctx.font = "10px Inter, system-ui, sans-serif";
+      ctx.fillText("of subjects critical", cx, cy - R * 0.4 + 18);
+
+      // Min / Max labels
+      ctx.fillStyle = "#4d5566";
+      ctx.font = "9px Inter, system-ui, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText("0%", cx - R - 8, cy + 14);
+      ctx.textAlign = "right";
+      ctx.fillText("100%", cx + R + 8, cy + 14);
+    }
+
+    /* =============================================================
+       DRAW ALL CHARTS
+    ============================================================= */
+    function drawAllCharts(records) {
+      // Defer until layout is ready
+      requestAnimationFrame(() => {
+        drawBarChart(records);
+        drawDonutChart(records);
+        drawTreemap(records);
+        drawScatterChart(records);
+        drawHBarChart(records);
+        drawGaugeChart(records);
+        attachChartInteractions(records);
+      });
+    }
+
+    /* =============================================================
+       CHART MOUSE INTERACTIONS
+    ============================================================= */
+    function attachChartInteractions(records) {
+
+      /* --- Bar chart hover --- */
+      const barCanvas = document.getElementById("barChart");
+      if (barCanvas) {
+        barCanvas.addEventListener("mousemove", function (e) {
+          const rect = barCanvas.getBoundingClientRect();
+          const mx = e.clientX - rect.left;
+          const my = e.clientY - rect.top;
+          const hits = barCanvas._hitBoxes || [];
+          let found = false;
+          for (const h of hits) {
+            if (mx >= h.x && mx <= h.x + h.w && my >= h.r_y || 0) {
+              if (mx >= h.x && mx <= h.x + h.w) {
+                const r = h.r;
+                showTooltip(
+                  `<strong style="color:#e6edf3">${r.first || r.first_name} ${r.last || r.last_name}</strong><br>` +
+                  `Flags: <span style="color:#e3b341;font-weight:600">${r.total_flags_count}</span><br>` +
+                  `Total: ${formatCurrency(r.total_amt)}`,
+                  e.clientX, e.clientY
+                );
+                found = true;
+                break;
+              }
+            }
+          }
+          if (!found) hideTooltip();
+        });
+        barCanvas.addEventListener("mouseleave", hideTooltip);
+      }
+
+      /* --- Scatter chart hover --- */
+      const scatterCanvas = document.getElementById("scatterChart");
+      if (scatterCanvas) {
+        scatterCanvas.addEventListener("mousemove", function (e) {
+          const rect = scatterCanvas.getBoundingClientRect();
+          const mx = e.clientX - rect.left;
+          const my = e.clientY - rect.top;
+          const hits = scatterCanvas._scatterHits || [];
+          let found = false;
+          for (const h of hits) {
+            const dx = mx - h.px, dy = my - h.py;
+            if (Math.sqrt(dx * dx + dy * dy) <= h.rad + 4) {
+              const r = h.r;
+              showTooltip(
+                `<strong style="color:#e6edf3">${r.first || r.first_name} ${r.last || r.last_name}</strong><br>` +
+                `Avg: ${formatCurrency(r.avg_amt)}<br>` +
+                `Total: ${formatCurrency(r.total_amt)}<br>` +
+                `Flags: <span style="color:#e3b341;font-weight:600">${r.total_flags_count}</span>`,
+                e.clientX, e.clientY
+              );
+              found = true;
+              break;
+            }
+          }
+          if (!found) hideTooltip();
+        });
+        scatterCanvas.addEventListener("mouseleave", hideTooltip);
+      }
+
+      /* --- Treemap hover --- */
+      const treemapCanvas = document.getElementById("treemapChart");
+      if (treemapCanvas) {
+        treemapCanvas.addEventListener("mousemove", function (e) {
+          const rect = treemapCanvas.getBoundingClientRect();
+          const mx = e.clientX - rect.left;
+          const my = e.clientY - rect.top;
+          const hits = treemapCanvas._treemapHits || [];
+          let found = false;
+          for (const h of hits) {
+            if (mx >= h.x && mx <= h.x + h.w && my >= h.y && my <= h.y + h.h) {
+              showTooltip(
+                `<strong style="color:#e6edf3">${h.d.name}</strong><br>` +
+                `Exposure: ${formatCurrency(h.d.value)}<br>` +
+                `Flags: <span style="color:#e3b341;font-weight:600">${h.d.flags}</span>`,
+                e.clientX, e.clientY
+              );
+              found = true;
+              break;
+            }
+          }
+          if (!found) hideTooltip();
+        });
+        treemapCanvas.addEventListener("mouseleave", hideTooltip);
+      }
+
+      /* --- Donut chart hover --- */
+      const donutCanvas = document.getElementById("donutChart");
+      if (donutCanvas) {
+        donutCanvas.addEventListener("mousemove", function (e) {
+          const rect = donutCanvas.getBoundingClientRect();
+          const mx = e.clientX - rect.left;
+          const my = e.clientY - rect.top;
+          const cx = donutCanvas._donutCX;
+          const cy = donutCanvas._donutCY;
+          const R = donutCanvas._donutR;
+          const IR = donutCanvas._donutIR;
+          const dx = mx - cx, dy = my - cy;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > IR && dist < R + 4) {
+            let angle = Math.atan2(dy, dx);
+            if (angle < -Math.PI / 2) angle += 2 * Math.PI;
+            const normAngle = angle + Math.PI / 2;
+            const arcs = donutCanvas._donutHitArcs || [];
+            let found = false;
+            for (const arc of arcs) {
+              let sa = arc.startAngle + Math.PI / 2;
+              let ea = arc.endAngle + Math.PI / 2;
+              if (sa < 0) sa += 2 * Math.PI;
+              if (ea < 0) ea += 2 * Math.PI;
+              // Simple angular test
+              const pct = ((arc.seg.value / (records.length || 1)) * 100).toFixed(1);
+              showTooltip(
+                `<strong style="color:#e6edf3">${arc.seg.label}</strong><br>` +
+                `Count: ${arc.seg.value} &nbsp; (${pct}%)`,
+                e.clientX, e.clientY
+              );
+              found = true;
+              break;
+            }
+            if (!found) hideTooltip();
+          } else {
+            hideTooltip();
+          }
+        });
+        donutCanvas.addEventListener("mouseleave", hideTooltip);
+      }
+    }
+
+    /* =============================================================
+       RESIZE OBSERVER — redraw charts on size change
+    ============================================================= */
+    let resizeTimer;
+    const ro = new ResizeObserver(() => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (allRecords.length > 0) drawAllCharts(allRecords);
+      }, 120);
+    });
+    ro.observe(document.getElementById("chartsGrid"));
+
+    /* =============================================================
+       TOGGLE ANALYTICS PANEL
+    ============================================================= */
+    document.getElementById("toggleAnalyticsBtn").addEventListener("click", function () {
+      const grid = document.getElementById("chartsGrid");
+      const btn = this;
+      const isHidden = grid.classList.toggle("hidden");
+      btn.classList.toggle("collapsed", isHidden);
+      btn.innerHTML = isHidden
+        ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"
+           stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+         <path d="M2 4l4 4 4-4"/>
+       </svg> Show Charts`
+        : `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"
+           stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+         <path d="M2 4l4 4 4-4"/>
+       </svg> Hide Charts`;
+      // Redraw after animation completes
+      if (!isHidden) {
+        setTimeout(() => { if (allRecords.length > 0) drawAllCharts(allRecords); }, 460);
+      }
+    });
+
+    /* =============================================================
+       EVENT LISTENERS — Search & Filters
+    ============================================================= */
+    let searchTimer;
+    document.getElementById("searchInput").addEventListener("input", function () {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        searchQuery = this.value;
+        applyFilters();
+      }, 200);
+    });
+
+    function setFilter(name) {
+      activeFilter = name;
+      ["btnAll", "btnHigh", "btnCritical"].forEach(id =>
+        document.getElementById(id).classList.remove("active"));
+      const btnMap = { all: "btnAll", high: "btnHigh", critical: "btnCritical" };
+      document.getElementById(btnMap[name]).classList.add("active");
+      applyFilters();
+    }
+
+    document.getElementById("btnAll").addEventListener("click", () => setFilter("all"));
+    document.getElementById("btnHigh").addEventListener("click", () => setFilter("high"));
+    document.getElementById("btnCritical").addEventListener("click", () => setFilter("critical"));
+
+    /* =============================================================
+       INIT
+    ============================================================= */
+    loadData();
+  </script>
+</body>
+
+</html>
