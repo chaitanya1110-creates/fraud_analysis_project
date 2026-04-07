@@ -20,6 +20,7 @@
 # MAGIC URL 'abfss://lakehouse@fraudanalysis2026.dfs.core.windows.net/gold/'
 # MAGIC WITH (STORAGE CREDENTIAL `gold`)
 # MAGIC COMMENT 'for the gold data';
+#MAGIC -- I am using comments to let others know for what reason i am usig this external location
 
 # COMMAND ----------
 
