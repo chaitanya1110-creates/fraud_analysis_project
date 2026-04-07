@@ -1,4 +1,5 @@
 # Databricks notebook source
+#MAGIC -- used this to reload the .py file when it was giving 3 - 4 same outputs
 # MAGIC %load_ext autoreload
 # MAGIC %autoreload 2
 # MAGIC # Enables autoreload; learn more at https://docs.databricks.com/en/files/workspace-modules.html#autoreload-for-python-modules
@@ -13,7 +14,7 @@ from pipeline_logger import Logger
 # We pass __name__ as the first argument (the name of the logger)
 log = Logger() 
 
-# Now log.safe_run will work perfectly
+# To let log.safe_run work perfectly
 storage_account = "abfss://lakehouse@fraudanalysis2026.dfs.core.windows.net"
 checkpoint_path = f"{storage_account}/checkpoints/bronze"
 source_path     = f"{storage_account}/bronze/"
