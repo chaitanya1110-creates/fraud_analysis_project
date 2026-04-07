@@ -23,7 +23,6 @@ def process_silver_layer():
     df_raw = spark.readStream.table("fraudanalysis2026.bronze.bronze_fraud_analysis")
 
     # A. Drop the unwanted column
-    # B. Cast columns to correct types (based on your screenshot)
     # C. Fill NA values (Unknown for strings, 0 for numbers)
     df_transformed = (df_raw
         .drop("rescued_data")
@@ -31,9 +30,9 @@ def process_silver_layer():
         .withColumn("zip", F.col("zip").cast(StringType()))
         .withColumn("city_pop", F.col("city_pop").cast(IntegerType()))
         .withColumn("trans_date_trans_time", F.col("trans_date_trans_time").cast(TimestampType()))
-        .fillna("Unknown") # Fills all String nulls
-        .fillna(0, subset=["amt", "city_pop", "lat", "long", "merch_lat", "merch_long"]) # Fills numeric nulls with 0
-        .fillna("00000", subset=["cc_num", "zip", "merch_zipcode"]) # Fills specific codes
+        .fillna("Unknown") 
+        .fillna(0, subset=["amt", "city_pop", "lat", "long", "merch_lat", "merch_long"]) 
+        .fillna("00000", subset=["cc_num", "zip", "merch_zipcode"]) 
     )
 
     # D. Deduplication using the transaction unique ID
