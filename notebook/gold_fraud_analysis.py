@@ -13,6 +13,7 @@ checkpoint_path = "/Volumes/fraudanalysis2026/gold/checkpoints/gold"
 json_file_path = f"{gold_external_path}flagged_personnel.json"
 
 # --- STEP 1: SETUP ---
+# I have used volume to store my json file
 
 spark.sql("USE CATALOG fraudanalysis2026")
 spark.sql("CREATE SCHEMA IF NOT EXISTS gold")
@@ -39,7 +40,7 @@ def process_gold_batch(batch_df, batch_id):
         "prev_trans_time", F.lag("trans_date_trans_time").over(window_spec)
     )
 
-    # B. Flagging Logic
+    # B. Flagging Logic here I have used that if a person makes another transaction within 60 sec or 15 times the avg trans amount
     flagged_df = enriched_df.withColumn(
         "is_fraud_flag",
         F.when(
@@ -97,14 +98,14 @@ def process_gold_batch(batch_df, batch_id):
 
     summary_df = merged_df.orderBy(F.col("total_flags_count").desc())
 
-    # Save as a single named JSON file: flagged_personnel.json
+    # Save as a single named JSON file: flagged_personnel.json using coalesce to not get many files
     temp_path = f"{volume_gold_path}/_temp_json"
     (summary_df.coalesce(1).write
         .mode("overwrite")
         .format("json")
         .save(temp_path))
 
-    # Rename the Spark part file to flagged_personnel.json
+    # Rename the Spark part file to flagged_personnel.json using dbutils 
     from pyspark.dbutils import DBUtils
     dbutils = DBUtils(spark)
     part_file = [f.path for f in dbutils.fs.ls(temp_path) if f.name.startswith("part-")][0]
